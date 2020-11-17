@@ -11,7 +11,7 @@
     "type": "git",
     "url": "git+https://github.com/Skeletonzek/express-mesto.git"
   },
-  "author": "",
+  "author": "Ilya Zhulanov",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/Skeletonzek/express-mesto/issues"
