@@ -1,25 +1,16 @@
-const fs = require('fs');
-const path = require('path');
+const userRouter = require('express').Router();
+const {
+  sendUsers,
+  sendUser,
+  createUser,
+  updateUser,
+  updateAvatar,
+} = require('../controllers/users');
 
-module.exports.sendUsers = (req, res) => {
-  fs.readFile(path.join(__dirname, '../data/users.json'), { encoding: 'utf8' }, (err, data) => {
-    if (err) {
-      return res.status(500).send({ message: 'Нет необходимого файла с данными' });
-    }
-    return res.send(JSON.parse(data));
-  });
-};
+userRouter.get('/users', sendUsers);
+userRouter.post('/users', createUser);
+userRouter.get('/users/:userId', sendUser);
+userRouter.patch('/users/me', updateUser);
+userRouter.patch('/users/me/avatar', updateAvatar);
 
-module.exports.sendUser = (req, res) => {
-  fs.readFile(path.join(__dirname, '../data/users.json'), { encoding: 'utf8' }, (err, data) => {
-    if (err) {
-      return res.status(500).send({ message: 'Нет необходимого файла с данными' });
-    }
-    const users = JSON.parse(data);
-    const user = users.find((el) => el._id === req.params.id);
-    if (!user) {
-      return res.status(404).send({ message: 'Нет пользователя с таким id' });
-    }
-    return res.send(user);
-  });
-};
+module.exports = userRouter;
