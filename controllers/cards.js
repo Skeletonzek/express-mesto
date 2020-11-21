@@ -17,8 +17,8 @@ module.exports.sendCards = (req, res) => {
 };
 
 module.exports.createCard = (req, res) => {
-  const { name, link, owner } = req.body;
-  Card.create({ name, link, owner })
+  const { name, link } = req.body;
+  Card.create({ name, link, owner: req.user._id })
     .then((card) => res.send({ data: card }))
     .catch(() => res.status(400).send({ message: 'Переданы некорректные данные' }));
 };
