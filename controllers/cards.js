@@ -1,6 +1,6 @@
 const Card = require('../models/card');
 
-module.exports.sendCards = (req, res) => {
+module.exports.sendCards = (req, res, next) => {
   Card.find({})
     .orFail(() => {
       const error = new Error('Карточки не найдены');
@@ -10,39 +10,57 @@ module.exports.sendCards = (req, res) => {
     .then((cards) => res.send({ data: cards }))
     .catch((err) => {
       if (err.kind === undefined) {
-        return res.status(err.statusCode).send({ message: err.message });
+        next(err);
       }
-      return res.status(500).send({ message: 'Ошибка на сервере' });
+      next(err);
     });
 };
 
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
   Card.create({ name, link, owner: req.user._id })
     .then((card) => res.send({ data: card }))
-    .catch(() => res.status(400).send({ message: 'Переданы некорректные данные' }));
+    .catch(() => {
+      const error = new Error('Переданы некорректные данные');
+      error.statusCode = 400;
+      next(error);
+    });
 };
 
-module.exports.deleteCard = (req, res) => {
-  Card.findByIdAndRemove(req.params.cardId)
+module.exports.deleteCard = (req, res, next) => {
+  Card.findById(req.params.cardId)
     .orFail(() => {
       const error = new Error('Карточка не найдена');
       error.statusCode = 404;
       throw error;
     })
-    .then((card) => res.send({ data: card }))
+    .then((card) => {
+      if (card.owner === req.user._id) {
+        Card.findByIdAndRemove(req.params.cardId)
+          .then(() => res.send({ data: card }));
+      }
+      const error = new Error('Ошибка доступа');
+      error.statusCode = 403;
+      error.kind = 'invalid';
+      throw error;
+    })
     .catch((err) => {
       if (err.kind === undefined) {
-        return res.status(err.statusCode).send({ message: err.message });
+        next(err);
       }
       if (err.kind === 'ObjectId') {
-        return res.status(400).send({ message: 'Неверный Id' });
+        const error = new Error('Неверный Id');
+        error.statusCode = 400;
+        next(error);
       }
-      return res.status(500).send({ message: 'Ошибка на сервере' });
+      if (err.kind === 'invalid') {
+        next(err);
+      }
+      next(err);
     });
 };
 
-module.exports.likeCard = (req, res) => {
+module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user._id } }, { new: true })
     .orFail(() => {
       const error = new Error('Карточка не найдена');
@@ -52,16 +70,18 @@ module.exports.likeCard = (req, res) => {
     .then((likes) => res.send({ data: likes }))
     .catch((err) => {
       if (err.kind === undefined) {
-        return res.status(err.statusCode).send({ message: err.message });
+        next(err);
       }
       if (err.kind === 'ObjectId') {
-        return res.status(400).send({ message: 'Неверный Id' });
+        const error = new Error('Неверный Id');
+        error.statusCode = 400;
+        next(error);
       }
-      return res.status(500).send({ message: 'Ошибка на сервере' });
+      next(err);
     });
 };
 
-module.exports.dislikeCard = (req, res) => {
+module.exports.dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user._id } }, { new: true })
     .orFail(() => {
       const error = new Error('Карточка не найдена');
@@ -71,11 +91,13 @@ module.exports.dislikeCard = (req, res) => {
     .then((likes) => res.send({ data: likes }))
     .catch((err) => {
       if (err.kind === undefined) {
-        return res.status(err.statusCode).send({ message: err.message });
+        next(err);
       }
       if (err.kind === 'ObjectId') {
-        return res.status(400).send({ message: 'Неверный Id' });
+        const error = new Error('Неверный Id');
+        error.statusCode = 400;
+        next(error);
       }
-      return res.status(500).send({ message: 'Ошибка на сервере' });
+      next(err);
     });
 };
