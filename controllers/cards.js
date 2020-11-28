@@ -35,14 +35,15 @@ module.exports.deleteCard = (req, res, next) => {
       throw error;
     })
     .then((card) => {
-      if (card.owner === req.user._id) {
+      if (card.owner.toString() === req.user._id) {
         Card.findByIdAndRemove(req.params.cardId)
           .then(() => res.send({ data: card }));
+      } else {
+        const error = new Error('Ошибка доступа');
+        error.statusCode = 403;
+        error.kind = 'invalid';
+        throw error;
       }
-      const error = new Error('Ошибка доступа');
-      error.statusCode = 403;
-      error.kind = 'invalid';
-      throw error;
     })
     .catch((err) => {
       if (err.kind === undefined) {
